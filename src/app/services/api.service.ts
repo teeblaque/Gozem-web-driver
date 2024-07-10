@@ -17,4 +17,16 @@ export class ApiService {
   getDeliveryById(id: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/delivery/${id}`);
   }
+
+  updateDeliveryStatus(id: string, status: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/delivery/${id}`, { status });
+  }
+
+  getDeliveries(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/delivery`);
+  }
+
+  getPackages(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/package`);
+  }
 }

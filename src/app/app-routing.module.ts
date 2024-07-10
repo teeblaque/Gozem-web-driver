@@ -3,7 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 import { PackageDeliveryComponent } from './components/package-delivery/package-delivery.component';
 
 const routes: Routes = [
-  { path: '', component: PackageDeliveryComponent}
+  { path: '', redirectTo: 'package-delivery', pathMatch: 'full'},
+  { path: '', component: PackageDeliveryComponent},
+  { path: '**', redirectTo: '/package-delivery' },
 ];
 
 @NgModule({

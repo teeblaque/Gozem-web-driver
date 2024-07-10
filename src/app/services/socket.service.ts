@@ -1,26 +1,24 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { io } from 'socket.io-client';
+import { Socket, io } from 'socket.io-client';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SocketService {
-  private socket;
+  private socket: Socket;
 
   constructor() { 
     this.socket = io('http://localhost:9000');
   }
 
-  onDeliveryUpdate(eventName: any): Observable<any> {
-    return new Observable((observer) => {
-      this.socket.on(eventName, (data: any) => {
-        observer.next(data);
-      });
+  onEvent(event: string): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.on(event, (data: any) => observer.next(data));
     });
   }
 
-  emit(eventName: string, data: any) {
-    this.socket.emit(eventName, data);
+  emitEvent(event: string, data: any) {
+    this.socket.emit(event, data);
   }
 }
