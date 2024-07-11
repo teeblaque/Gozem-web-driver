@@ -13,9 +13,12 @@ export class PackageDeliveryComponent implements OnInit, OnDestroy {
   delivery: any = null;
   package: any = null;
   map: any;
-  markers: any = {};
+  selectedDelivery: any = {};
   locationInterval: any;
-  selectedDelivery: any = null;
+
+  currentLocationMarker: any;
+  sourceMarker: any;
+  destinationMarker: any;
 
   @ViewChild('map', { static: true })
   mapElement!: ElementRef;
@@ -27,16 +30,16 @@ export class PackageDeliveryComponent implements OnInit, OnDestroy {
       if (this.delivery && this.delivery.delivery_id === updatedDelivery.delivery_id) {
         this.delivery = updatedDelivery;
         this.loadPackageDetails(updatedDelivery.package_id);
-        this.updateMarker('current', updatedDelivery.location);
+        this.updateMarkers();
       }
     });
     this.initializeMap();
-
-    setInterval(()=> { 
+    this.locationInterval = setInterval(()=> { 
       if (this.delivery) {
         this.selectDelivery();
       }
     }, 20000);
+    
   }
 
   ngOnDestroy(): void {
@@ -49,15 +52,42 @@ export class PackageDeliveryComponent implements OnInit, OnDestroy {
     this.updateLocation();
   }
 
-  updateMarker(type: string, position: { lat: number, lng: number }) {
-    if (!this.markers[type]) {
-      this.markers[type] = new google.maps.Marker({
-        map: this.map,
-        position: new google.maps.LatLng(position.lat, position.lng),
-        label: type.charAt(0).toUpperCase(),
-      });
-    } else {
-      this.markers[type].setPosition(new google.maps.LatLng(position.lat, position.lng));
+  updateMarkers() {
+    if (this.delivery) {
+      const source = this.selectedDelivery.package.from_location || { lat: 0, lng: 0 };
+      const destination = this.selectedDelivery.package.to_location || { lat: 0, lng: 0 };
+      const location = this.delivery.location || { lat: 0, lng: 0 };
+
+      if (!this.sourceMarker) {
+        this.sourceMarker = new google.maps.Marker({
+          map: this.map,
+          position: new google.maps.LatLng(source.lat, source.lng),
+          label: 'S'
+        });
+      } else {
+        this.sourceMarker.setPosition(new google.maps.LatLng(source.lat, source.lng));
+      }
+
+      if (!this.destinationMarker) {
+        this.destinationMarker = new google.maps.Marker({
+          map: this.map,
+          position: new google.maps.LatLng(destination.lat, destination.lng),
+          label: 'D'
+        });
+      } else {
+        this.destinationMarker.setPosition(new google.maps.LatLng(destination.lat, destination.lng));
+      }
+
+      if (!this.currentLocationMarker) {
+        this.currentLocationMarker = new google.maps.Marker({
+          map: this.map,
+          position: new google.maps.LatLng(location.lat, location.lng),
+          label: 'C'
+        });
+      } else {
+        this.currentLocationMarker.setPosition(new google.maps.LatLng(location.lat, location.lng));
+      }
+      this.map.setCenter(new google.maps.LatLng(location.lat, location.lng));
     }
   }
 
@@ -73,8 +103,9 @@ export class PackageDeliveryComponent implements OnInit, OnDestroy {
   loadDelivery() {
     this.apiService.getDeliveryById(this.deliveryId).subscribe((delivery) => {
       this.delivery = delivery[0];
+      this.selectedDelivery = delivery[0];
       this.loadPackageDetails(this.delivery.package_id);
-      this.updateMarker('current', this.delivery.location);
+      this.updateMarkers();
     });
   }
 
@@ -94,7 +125,7 @@ export class PackageDeliveryComponent implements OnInit, OnDestroy {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         const location = { lat: position.coords.latitude, lng: position.coords.longitude };
-        this.updateMarker('current', location);
+        this.updateMarkers();
         console.log(location);
         this.socketService.emitEvent('location_changed', { delivery_id: this.delivery.delivery_id, location });
       });
